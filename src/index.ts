@@ -5,6 +5,7 @@ const pull = require('pull-stream');
 const Notify = require('pull-notify');
 const msAddress = require('multiserver-address');
 const ref = require('ssb-ref');
+const debug = require('debug')('ssb:conn-hub');
 
 function isDhtAddress(addr: Address) {
   return addr.substr(0, 4) === 'dht:';
@@ -62,9 +63,8 @@ class ConnHub {
         if (typeof data[k] === 'undefined') delete data[k];
       });
       this._peers.set(address, {...previousData, ...data});
-    } else if (!data.state && !this._peers.has(address)) {
-      // Refuse to add an entry with no state
-      // TODO debug log this exceptional case
+    } else if (!data.state) {
+      debug('unexpected control flow, we cannot add a peer without state');
     } else {
       this._peers.set(address, data as Data);
     }
@@ -79,10 +79,12 @@ class ConnHub {
 
   private _setupPing(address: Address, rpc: any, key?: string) {
     const pp = ping({serve: true, timeout: this._pingTimeout}, () => {});
+    debug('ping %s', address);
     this._notify({type: 'ping', address, key, details: pp} as ListenEvent);
     pull(
       pp,
       rpc.gossip.ping({timeout: this._pingTimeout}, (err: any) => {
+        debug('failed to ping %s', address);
         this._notify({
           type: 'ping-failed',
           address,
@@ -113,8 +115,7 @@ class ConnHub {
         }, 200);
         rpc._connectRetries += 1;
       } else {
-        // TODO debug log that there was a client who connected
-        // through means other than the conn-hub API
+        debug('RPC client %s connected to us, but not via conn-hub', rpc.id);
       }
       return;
     }
@@ -125,12 +126,14 @@ class ConnHub {
     const state = 'connected';
     const disconnect: Data['disconnect'] = cb => rpc.close(true, cb);
     this._setPeer(address, {state, key, disconnect});
+    debug('connected to %s', address);
     this._notify({type: state, address, key, details: rpc} as ListenEvent);
 
     if (isClient) this._setupPing(address, rpc, key);
 
     rpc.on('closed', () => {
       this._peers.delete(address);
+      debug('disconnected from %s', address);
       this._notify({type: 'disconnected', address, key} as ListenEvent);
     });
   }
@@ -153,18 +156,20 @@ class ConnHub {
         this._connectRetries.add(address);
         return false;
       } else {
-        // TODO debug log unexpected case
+        debug('unexpected control flow, peer %o has bad state', peer);
       }
     }
 
     const state: Data['state'] = 'connecting';
     const key = inferPublicKey(address);
     this._setPeer(address, {state, key});
+    debug('connecting to %s', address);
     this._notify({type: state, address, key} as ListenEvent);
 
     const [err, rpc] = await run<any>(this._server.connect)(address);
     if (err) {
       this._peers.delete(address);
+      debug('failed to connect to %s', address);
       this._notify({
         type: 'connecting-failed',
         address,
@@ -178,6 +183,7 @@ class ConnHub {
     if (!peer || peer.state !== 'connected') {
       const state: Data['state'] = 'connected';
       this._setPeer(address, {state, key});
+      debug('connected to %s', address);
       this._notify({type: state, address, key, details: rpc} as ListenEvent);
     }
     return rpc;
@@ -196,12 +202,14 @@ class ConnHub {
     if (peer.state !== 'disconnecting') {
       const state: Data['state'] = 'disconnecting';
       this._setPeer(address, {state, key});
+      debug('disconnecting from %s', address);
       this._notify({type: state, address, key} as ListenEvent);
     }
 
     if (peer.disconnect) {
       const [err] = await run<never>(peer.disconnect)();
       if (err) {
+        debug('failed to disconnect from %s', address);
         this._notify({
           type: 'disconnecting-failed',
           address,
@@ -213,6 +221,7 @@ class ConnHub {
     }
 
     this._peers.delete(address);
+    debug('disconnected from %s', address);
     this._notify({type: 'disconnected', address, key} as ListenEvent);
 
     // Re-connect because while disconnect() was running,
