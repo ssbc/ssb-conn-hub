@@ -1,0 +1,34 @@
+{
+  "name": "ssb-conn-hub",
+  "description": "Module that manages active connections to SSB peers",
+  "version": "0.0.1",
+  "homepage": "https://github.com/staltz/ssb-conn-hub",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/staltz/ssb-conn-hub.git"
+  },
+  "dependencies": {
+    "multiserver-address": "~1.0.1",
+    "promisify-tuple": "^1.0.0",
+    "pull-notify": "~0.1.1",
+    "pull-ping": "~2.0.2",
+    "pull-stream": "^3.6.9",
+    "ssb-ref": "~2.13.9"
+  },
+  "devDependencies": {
+    "@types/node": "^11.10.4",
+    "ssb-server": "~13.6.3",
+    "ssb-keys": "~7.1.5",
+    "tape": "^4.9.2",
+    "typescript": "3.3.x"
+  },
+  "scripts": {
+    "typescript": "tsc",
+    "tape": "set -e; for t in test/*.js; do node $t; done",
+    "test": "npm run typescript && npm run tape"
+  },
+  "author": "Andre Staltz <contact@staltz.com> (http://staltz.com)",
+  "license": "MIT"
+}
