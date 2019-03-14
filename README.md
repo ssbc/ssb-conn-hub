@@ -42,6 +42,14 @@ const connPlugin = {
   - Resolves with `true` when disconnected successfully
   - Resolves with `false` when the disconnect was unnecessary, therefore not performed
   - Rejects with an error indicating why the disconnection failed
+* `connHub.reset()`: closes all connections, basically resetting this instance as if it had just been started
+* `connHub.entries()`: returns a new `Iterator` object that gives `[address, data]` pairs, where data has the state and key of the peer
+* `connDB.listen()`: returns a pull stream that notifies of connection events, as an object `{type, address, key, details}` where:
+  - `type` is either `'connecting'`, `'connecting-failed'`, `'connected'`, `'disconnecting'`, `'disconnecting-failed'`, `'disconnected'`, `'ping'`, or `'ping-failed'`
+  - `address` is the original address used for connecting
+  - (maybe present) `key` is the cryptographic public id
+  - (maybe present) `details` is an object with additional info (such as errors)
+* `connHub.getState(address)`: returns undefined if the peer for that address is disconnected, otherwise returns one of `'connecting'`, `'connected'`, or `'disconnecting'`
 
 ## License
 
