@@ -160,7 +160,7 @@ class ConnHub {
       const state: Data['state'] = 'connected';
       this._setPeer(address, {state, key});
       debug('connected to %s', address);
-      this._notify({type: state, address, key, details: rpc} as ListenEvent);
+      this._notify({type: state, address, key, details: {rpc}} as ListenEvent);
     }
     return rpc;
   }
