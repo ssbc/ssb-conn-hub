@@ -1,7 +1,5 @@
-import {ConnectionData as Data, ListenEvent, Opts, Address} from './types';
+import {ConnectionData as Data, ListenEvent, Address} from './types';
 import run = require('promisify-tuple');
-const ping = require('pull-ping');
-const pull = require('pull-stream');
 const Notify = require('pull-notify');
 const msAddress = require('multiserver-address');
 const ref = require('ssb-ref');
@@ -27,13 +25,8 @@ function inferPublicKey(address: Address): string | undefined {
   }
 }
 
-const defaultOpts: Opts = {
-  pingTimeout: 5 * 6e4,
-};
-
 class ConnHub {
   private readonly _server: any;
-  private readonly _pingTimeout: number;
   private readonly _peers: Map<Address, Data>;
   private readonly _notify: any;
 
@@ -42,9 +35,8 @@ class ConnHub {
    */
   private readonly _connectRetries: Set<Address>;
 
-  constructor(server: any, opts: Partial<Opts> = defaultOpts) {
+  constructor(server: any) {
     this._server = server;
-    this._pingTimeout = opts.pingTimeout || defaultOpts.pingTimeout;
     this._connectRetries = new Set<Address>();
     this._peers = new Map<Address, Data>();
     this._notify = Notify();
@@ -75,25 +67,6 @@ class ConnHub {
       if (data.key === key) return [address, data];
     }
     return undefined;
-  }
-
-  private _setupPing(address: Address, rpc: any, key?: string) {
-    const pp = ping({serve: true, timeout: this._pingTimeout}, () => {});
-    debug('ping %s', address);
-    this._notify({type: 'ping', address, key, details: pp} as ListenEvent);
-    pull(
-      pp,
-      rpc.gossip.ping({timeout: this._pingTimeout}, (err: any) => {
-        debug('failed to ping %s', address);
-        this._notify({
-          type: 'ping-failed',
-          address,
-          key,
-          details: err,
-        } as ListenEvent);
-      }),
-      pp,
-    );
   }
 
   private _onRpcConnect(rpc: any, isClient: boolean) {
@@ -127,9 +100,12 @@ class ConnHub {
     const disconnect: Data['disconnect'] = cb => rpc.close(true, cb);
     this._setPeer(address, {state, key, disconnect});
     debug('connected to %s', address);
-    this._notify({type: state, address, key, details: rpc} as ListenEvent);
-
-    if (isClient) this._setupPing(address, rpc, key);
+    this._notify({
+      type: state,
+      address,
+      key,
+      details: {rpc, isClient},
+    } as ListenEvent);
 
     rpc.on('closed', () => {
       this._peers.delete(address);

@@ -32,8 +32,6 @@ const connPlugin = {
 ## API
 
 * `new ConnHub(server)`: constructor for a connHub instance, accepting an `ssb-server` instance as argument
-* `new ConnHub(server, opts)`: like the above, but the second argument is an optional object with configurations:
-  - `opts.pingTimeout` (default 5 minutes): time interval between ping calls to other peers.
 * `connHub.connect(address)`: connect to a peer known by its `address` (string, must conform to the [multiserver address convention](https://github.com/dominictarr/multiserver-address)). Returns a Promise, with the three possible outcomes:
   - Resolves with an RPC object that represents the successfully connected peer
   - Resolves with `false` when the connect was unnecessary, therefore not performed
@@ -45,7 +43,7 @@ const connPlugin = {
 * `connHub.reset()`: closes all connections, basically resetting this instance as if it had just been started
 * `connHub.entries()`: returns a new `Iterator` object that gives `[address, data]` pairs, where data has the state and key of the peer
 * `connDB.listen()`: returns a pull stream that notifies of connection events, as an object `{type, address, key, details}` where:
-  - `type` is either `'connecting'`, `'connecting-failed'`, `'connected'`, `'disconnecting'`, `'disconnecting-failed'`, `'disconnected'`, `'ping'`, or `'ping-failed'`
+  - `type` is either `'connecting'`, `'connecting-failed'`, `'connected'`, `'disconnecting'`, `'disconnecting-failed'`, `'disconnected'`
   - `address` is the original address used for connecting
   - (maybe present) `key` is the cryptographic public id
   - (maybe present) `details` is an object with additional info (such as errors)

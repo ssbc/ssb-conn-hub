@@ -14,12 +14,11 @@
     "promisify-tuple": "^1.0.0",
     "debug": "^4.1.1",
     "pull-notify": "~0.1.1",
-    "pull-ping": "~2.0.2",
-    "pull-stream": "^3.6.9",
     "ssb-ref": "~2.13.9"
   },
   "devDependencies": {
     "@types/node": "^11.10.4",
+    "pull-stream": "^3.6.9",
     "ssb-server": "~13.6.3",
     "ssb-keys": "~7.1.5",
     "tape": "^4.9.2",

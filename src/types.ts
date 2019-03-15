@@ -11,14 +11,8 @@ export type ListenEvent = Readonly<{
     | ConnectionData['state']
     | 'connecting-failed'
     | 'disconnecting-failed'
-    | 'disconnected'
-    | 'ping'
-    | 'ping-failed';
+    | 'disconnected';
   address: Address;
   key?: string;
   details?: any;
-}>;
-
-export type Opts = Readonly<{
-  pingTimeout: number;
 }>;
