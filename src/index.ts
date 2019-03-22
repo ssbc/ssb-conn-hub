@@ -235,7 +235,6 @@ class ConnHub {
 
   // TODO add API trafficStats() to replace schedule::isCurrentlyDownloading()
 
-  // TODO document all the possible types of events
   public listen() {
     return this._notify.listen();
   }
