@@ -76,6 +76,33 @@ tape('disconnect() resolves with false when there was no connection', t => {
   );
 });
 
+tape('after close(), nothing works', function(t) {
+  t.plan(3);
+  const connHub = new ConnHub(ssbServer);
+
+  connHub.disconnect(TEST_ADDR).then(
+    result => {
+      t.strictEquals(result, false, 'Resolves with false');
+
+      connHub.close();
+      t.pass('close() succeeds silently');
+
+      t.throws(
+        () => {
+          const x = connHub.entries();
+        },
+        /instance is closed/,
+        'entries() throws an error after close()',
+      );
+
+      t.end();
+    },
+    _err => {
+      t.fail('The disconnection should not happen');
+    },
+  );
+});
+
 tape('teardown', t => {
   ssbServer.close();
   t.end();

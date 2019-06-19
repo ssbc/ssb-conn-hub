@@ -1,5 +1,6 @@
 import {ConnectionData as Data, ListenEvent, Address} from './types';
 import run = require('promisify-tuple');
+import {EventEmitter} from 'events';
 const Notify = require('pull-notify');
 const msAddress = require('multiserver-address');
 const ref = require('ssb-ref');
@@ -29,6 +30,7 @@ class ConnHub {
   private readonly _server: any;
   private readonly _peers: Map<Address, Data>;
   private readonly _notify: any;
+  private _closed: boolean;
 
   /**
    * Used only to schedule a connect when a disconnect is in progress.
@@ -37,6 +39,7 @@ class ConnHub {
 
   constructor(server: any) {
     this._server = server;
+    this._closed = false;
     this._connectRetries = new Set<Address>();
     this._peers = new Map<Address, Data>();
     this._notify = Notify();
@@ -44,7 +47,10 @@ class ConnHub {
   }
 
   private _init() {
-    this._server.on('rpc:connect', this._onRpcConnect.bind(this));
+    (this._server as EventEmitter).addListener(
+      'rpc:connect',
+      this._onRpcConnect,
+    );
   }
 
   private _setPeer(address: Address, data: Partial<Data>) {
@@ -69,7 +75,7 @@ class ConnHub {
     return undefined;
   }
 
-  private _onRpcConnect(rpc: any, isClient: boolean) {
+  private _onRpcConnect = (rpc: any, isClient: boolean) => {
     // If we're not ready, close this connection immediately:
     if (!this._server.ready() && rpc.id !== this._server.id) return rpc.close();
 
@@ -112,13 +118,16 @@ class ConnHub {
       debug('disconnected from %s', address);
       this._notify({type: 'disconnected', address, key} as ListenEvent);
     });
-  }
+  };
 
   ///////////////
   //// PUBLIC API
   ///////////////
 
   public async connect(address: Address): Promise<false | object> {
+    if (this._closed) {
+      throw new Error('This ConnHub instance is closed, create a new one.');
+    }
     if (!msAddress.check(address)) {
       throw new Error('The given address is not a valid multiserver-address');
     }
@@ -166,6 +175,9 @@ class ConnHub {
   }
 
   public async disconnect(address: Address): Promise<boolean> {
+    if (this._closed) {
+      throw new Error('This ConnHub instance is closed, create a new one.');
+    }
     if (!msAddress.check(address)) {
       throw new Error('The given address is not a valid multiserver-address');
     }
@@ -211,6 +223,9 @@ class ConnHub {
   }
 
   public reset() {
+    if (this._closed) {
+      throw new Error('This ConnHub instance is closed, create a new one.');
+    }
     for (var id in this._server.peers) {
       if (id !== this._server.id) {
         for (let peer of this._server.peers[id]) {
@@ -221,10 +236,16 @@ class ConnHub {
   }
 
   public entries() {
+    if (this._closed) {
+      throw new Error('This ConnHub instance is closed, create a new one.');
+    }
     return this._peers.entries();
   }
 
   public getState(address: Address): Data['state'] | undefined {
+    if (this._closed) {
+      throw new Error('This ConnHub instance is closed, create a new one.');
+    }
     if (!msAddress.check(address)) {
       throw new Error('The given address is not a valid multiserver-address');
     }
@@ -236,7 +257,21 @@ class ConnHub {
   // TODO add API trafficStats() to replace schedule::isCurrentlyDownloading()
 
   public listen() {
+    if (this._closed) {
+      throw new Error('This ConnHub instance is closed, create a new one.');
+    }
     return this._notify.listen();
+  }
+
+  public close() {
+    (this._server as EventEmitter).removeListener(
+      'rpc:connect',
+      this._onRpcConnect,
+    );
+    this._closed = true;
+    this._peers.clear();
+    this._notify.end();
+    debug('closed the ConnHub instance');
   }
 }
 

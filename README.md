@@ -52,6 +52,7 @@ const connPlugin = {
   - (maybe present) `key` is the cryptographic public id
   - (maybe present) `details` is an object with additional info (such as errors)
 * `connHub.getState(address)`: returns undefined if the peer for that address is disconnected, otherwise returns one of `'connecting'`, `'connected'`, or `'disconnecting'`
+* `connHub.close()`: terminates any used resources and listeners, in preparation to destroy this instance.
 
 ## License
 
