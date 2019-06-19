@@ -88,7 +88,7 @@ class ConnHub {
         }, 200);
         rpc._connectRetries += 1;
       } else {
-        debug('RPC client %s connected to us, but not via conn-hub', rpc.id);
+        debug('peer %s initiated an RPC connection with us', rpc.id);
       }
       return;
     }
