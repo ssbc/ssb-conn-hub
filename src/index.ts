@@ -46,11 +46,25 @@ class ConnHub {
     this._init();
   }
 
+  //#region PRIVATE
+
   private _init() {
     (this._server as EventEmitter).addListener(
       'rpc:connect',
       this._onRpcConnect,
     );
+  }
+
+  private _assertNotClosed() {
+    if (this._closed) {
+      throw new Error('This ConnHub instance is closed, create a new one.');
+    }
+  }
+
+  private _assertValidAddress(address: Address) {
+    if (!msAddress.check(address)) {
+      throw new Error('The given address is not a valid multiserver-address');
+    }
   }
 
   private _setPeer(address: Address, data: Partial<Data>) {
@@ -120,17 +134,13 @@ class ConnHub {
     });
   };
 
-  ///////////////
-  //// PUBLIC API
-  ///////////////
+  //#endregion
+
+  //#region PUBLIC API
 
   public async connect(address: Address): Promise<false | object> {
-    if (this._closed) {
-      throw new Error('This ConnHub instance is closed, create a new one.');
-    }
-    if (!msAddress.check(address)) {
-      throw new Error('The given address is not a valid multiserver-address');
-    }
+    this._assertNotClosed();
+    this._assertValidAddress(address);
 
     if (this._peers.has(address)) {
       const peer = this._peers.get(address)!;
@@ -175,12 +185,8 @@ class ConnHub {
   }
 
   public async disconnect(address: Address): Promise<boolean> {
-    if (this._closed) {
-      throw new Error('This ConnHub instance is closed, create a new one.');
-    }
-    if (!msAddress.check(address)) {
-      throw new Error('The given address is not a valid multiserver-address');
-    }
+    this._assertNotClosed();
+    this._assertValidAddress(address);
 
     if (!this._peers.has(address)) return false;
 
@@ -223,9 +229,8 @@ class ConnHub {
   }
 
   public reset() {
-    if (this._closed) {
-      throw new Error('This ConnHub instance is closed, create a new one.');
-    }
+    this._assertNotClosed();
+
     for (var id in this._server.peers) {
       if (id !== this._server.id) {
         for (let peer of this._server.peers[id]) {
@@ -236,19 +241,14 @@ class ConnHub {
   }
 
   public entries() {
-    if (this._closed) {
-      throw new Error('This ConnHub instance is closed, create a new one.');
-    }
+    this._assertNotClosed();
+
     return this._peers.entries();
   }
 
   public getState(address: Address): Data['state'] | undefined {
-    if (this._closed) {
-      throw new Error('This ConnHub instance is closed, create a new one.');
-    }
-    if (!msAddress.check(address)) {
-      throw new Error('The given address is not a valid multiserver-address');
-    }
+    this._assertNotClosed();
+    this._assertValidAddress(address);
 
     if (!this._peers.has(address)) return undefined;
     return this._peers.get(address)!.state;
@@ -257,9 +257,8 @@ class ConnHub {
   // TODO add API trafficStats() to replace schedule::isCurrentlyDownloading()
 
   public listen() {
-    if (this._closed) {
-      throw new Error('This ConnHub instance is closed, create a new one.');
-    }
+    this._assertNotClosed();
+
     return this._notify.listen();
   }
 
@@ -273,6 +272,8 @@ class ConnHub {
     this._notify.end();
     debug('closed the ConnHub instance');
   }
+
+  //#endregion
 }
 
 export = ConnHub;
