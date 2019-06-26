@@ -62,6 +62,42 @@ tape('listen() emits connecting then connecting-failed', t => {
   );
 });
 
+tape('liveEntries() emits all entries as they update', t => {
+  const connHub = new ConnHub(ssbServer);
+
+  let i = 0;
+  pull(
+    connHub.liveEntries(),
+    pull.drain(entries => {
+      ++i;
+      if (i === 1) {
+        t.pass('FIRST EMISSION');
+        t.equals(entries.length, 0, 'entries === []');
+      } else if (i === 2) {
+        t.pass('SECOND EMISSION');
+        t.equals(entries.length, 1, 'there is one entry');
+        const entry = entries[0];
+        t.equals(entry[0], TEST_ADDR, 'left is the address');
+        t.equals(typeof entry[1], 'object', 'right is the data');
+        t.equals(entry[1].state, 'connecting', 'state is connecting');
+      } else if (i === 3) {
+        t.pass('THIRD EMISSION');
+        t.equals(entries.length, 0, 'entries === []');
+        t.end();
+      } else {
+        t.fail('listen() should not emit further events');
+      }
+    }),
+  );
+
+  connHub.connect(TEST_ADDR).then(
+    () => {
+      t.fail('The connection should not succeed');
+    },
+    _err => {},
+  );
+});
+
 tape('disconnect() resolves with false when there was no connection', t => {
   const connHub = new ConnHub(ssbServer);
 

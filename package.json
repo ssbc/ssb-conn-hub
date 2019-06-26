@@ -13,6 +13,8 @@
     "multiserver-address": "~1.0.1",
     "promisify-tuple": "^1.0.0",
     "debug": "^4.1.1",
+    "pull-cat": "~1.1.11",
+    "pull-stream": "~3.6.9",
     "pull-notify": "~0.1.1",
     "ssb-ref": "~2.13.9"
   },

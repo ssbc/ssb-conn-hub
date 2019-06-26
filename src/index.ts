@@ -1,6 +1,8 @@
 import {ConnectionData as Data, ListenEvent, Address} from './types';
 import run = require('promisify-tuple');
 import {EventEmitter} from 'events';
+const pull = require('pull-stream');
+const cat = require('pull-cat');
 const Notify = require('pull-notify');
 const msAddress = require('multiserver-address');
 const ref = require('ssb-ref');
@@ -29,7 +31,8 @@ function inferPublicKey(address: Address): string | undefined {
 class ConnHub {
   private readonly _server: any;
   private readonly _peers: Map<Address, Data>;
-  private readonly _notify: any;
+  private readonly _notifyEvent: any;
+  private readonly _notifyEntries: any;
   private _closed: boolean;
 
   /**
@@ -42,7 +45,8 @@ class ConnHub {
     this._closed = false;
     this._connectRetries = new Set<Address>();
     this._peers = new Map<Address, Data>();
-    this._notify = Notify();
+    this._notifyEvent = Notify();
+    this._notifyEntries = Notify();
     this._init();
   }
 
@@ -65,6 +69,10 @@ class ConnHub {
     if (!msAddress.check(address)) {
       throw new Error('The given address is not a valid multiserver-address');
     }
+  }
+
+  private _updateLiveEntries() {
+    this._notifyEntries(Array.from(this._peers.entries()));
   }
 
   private _setPeer(address: Address, data: Partial<Data>) {
@@ -120,17 +128,19 @@ class ConnHub {
     const disconnect: Data['disconnect'] = cb => rpc.close(true, cb);
     this._setPeer(address, {state, key, disconnect});
     debug('connected to %s', address);
-    this._notify({
+    this._notifyEvent({
       type: state,
       address,
       key,
       details: {rpc, isClient},
     } as ListenEvent);
+    this._updateLiveEntries();
 
     rpc.on('closed', () => {
       this._peers.delete(address);
       debug('disconnected from %s', address);
-      this._notify({type: 'disconnected', address, key} as ListenEvent);
+      this._notifyEvent({type: 'disconnected', address, key} as ListenEvent);
+      this._updateLiveEntries();
     });
   };
 
@@ -159,18 +169,20 @@ class ConnHub {
     const key = inferPublicKey(address);
     this._setPeer(address, {state, key});
     debug('connecting to %s', address);
-    this._notify({type: state, address, key} as ListenEvent);
+    this._notifyEvent({type: state, address, key} as ListenEvent);
+    this._updateLiveEntries();
 
     const [err, rpc] = await run<any>(this._server.connect)(address);
     if (err) {
       this._peers.delete(address);
       debug('failed to connect to %s', address);
-      this._notify({
+      this._notifyEvent({
         type: 'connecting-failed',
         address,
         key,
         details: err,
       } as ListenEvent);
+      this._updateLiveEntries();
       throw err;
     }
 
@@ -179,7 +191,13 @@ class ConnHub {
       const state: Data['state'] = 'connected';
       this._setPeer(address, {state, key});
       debug('connected to %s', address);
-      this._notify({type: state, address, key, details: {rpc}} as ListenEvent);
+      this._notifyEvent({
+        type: state,
+        address,
+        key,
+        details: {rpc},
+      } as ListenEvent);
+      this._updateLiveEntries();
     }
     return rpc;
   }
@@ -197,14 +215,15 @@ class ConnHub {
       const state: Data['state'] = 'disconnecting';
       this._setPeer(address, {state, key});
       debug('disconnecting from %s', address);
-      this._notify({type: state, address, key} as ListenEvent);
+      this._notifyEvent({type: state, address, key} as ListenEvent);
+      this._updateLiveEntries();
     }
 
     if (peer.disconnect) {
       const [err] = await run<never>(peer.disconnect)();
       if (err) {
         debug('failed to disconnect from %s', address);
-        this._notify({
+        this._notifyEvent({
           type: 'disconnecting-failed',
           address,
           key,
@@ -216,7 +235,8 @@ class ConnHub {
 
     this._peers.delete(address);
     debug('disconnected from %s', address);
-    this._notify({type: 'disconnected', address, key} as ListenEvent);
+    this._notifyEvent({type: 'disconnected', address, key} as ListenEvent);
+    this._updateLiveEntries();
 
     // Re-connect because while disconnect() was running,
     // someone called connect()
@@ -246,6 +266,15 @@ class ConnHub {
     return this._peers.entries();
   }
 
+  public liveEntries() {
+    this._assertNotClosed();
+
+    return cat([
+      pull.values([Array.from(this._peers.entries())]),
+      this._notifyEntries.listen(),
+    ]);
+  }
+
   public getState(address: Address): Data['state'] | undefined {
     this._assertNotClosed();
     this._assertValidAddress(address);
@@ -259,7 +288,7 @@ class ConnHub {
   public listen() {
     this._assertNotClosed();
 
-    return this._notify.listen();
+    return this._notifyEvent.listen();
   }
 
   public close() {
@@ -269,7 +298,8 @@ class ConnHub {
     );
     this._closed = true;
     this._peers.clear();
-    this._notify.end();
+    this._notifyEvent.end();
+    this._notifyEntries.end();
     debug('closed the ConnHub instance');
   }
 

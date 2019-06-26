@@ -8,34 +8,10 @@ Module that manages active connections to peers. For use with the SSB CONN famil
 
 ## Usage
 
-This module is only used to create an SSB CONN plugin, not used directly by applications.
-
-```js
-const ConnHub = require('ssb-conn-hub')
-
-const connPlugin = {
-  name: 'conn',
-  version: '1.0.0',
-  manifest: {
-    add: 'sync'
-  },
-  init: function(server) {
-    const connHub = new ConnHub(server);
-    return {
-      connect: function(address, data) {
-        // NOTICE THIS
-        connHub.connect(address).then(connected => {
-          // ...
-        });
-      },
-    };
-  }
-};
-```
+This module is only used to create an SSB CONN plugin, not used directly by applications. A ConnHub instance should be available on the CONN plugin, with the following API:
 
 ## API
 
-* `new ConnHub(server)`: constructor for a connHub instance, accepting an `ssb-server` instance as argument
 * `connHub.connect(address)`: connect to a peer known by its `address` (string, must conform to the [multiserver address convention](https://github.com/dominictarr/multiserver-address)). Returns a Promise, with the three possible outcomes:
   - Resolves with an RPC object that represents the successfully connected peer
   - Resolves with `false` when the connect was unnecessary, therefore not performed
@@ -46,6 +22,7 @@ const connPlugin = {
   - Rejects with an error indicating why the disconnection failed
 * `connHub.reset()`: closes all connections, basically resetting this instance as if it had just been started
 * `connHub.entries()`: returns a new `Iterator` object that gives `[address, data]` pairs, where data has the state and key of the peer
+* `connHub.liveEntries()`: returns a pull-stream that emits an array of entries (like `connHub.entries()`, but an array instead of an `Iterator`) everytime there are updates to connections.
 * `connDB.listen()`: returns a pull stream that notifies of connection events, as an object `{type, address, key, details}` where:
   - `type` is either `'connecting'`, `'connecting-failed'`, `'connected'`, `'disconnecting'`, `'disconnecting-failed'`, `'disconnected'`
   - `address` is the original address used for connecting
