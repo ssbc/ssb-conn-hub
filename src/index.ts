@@ -211,7 +211,8 @@ class ConnHub {
     const peer = this._peers.get(address)!;
 
     const key = inferPublicKey(address);
-    if (peer.state !== 'disconnecting') {
+    const prevState = peer.state;
+    if (prevState !== 'disconnecting') {
       const state: Data['state'] = 'disconnecting';
       this._setPeer(address, {state, key});
       debug('disconnecting from %s', address);
@@ -229,6 +230,8 @@ class ConnHub {
           key,
           details: err,
         } as ListenEvent);
+        this._setPeer(address, {state: prevState, key});
+        this._updateLiveEntries();
         throw err;
       }
     }
