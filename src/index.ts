@@ -148,7 +148,10 @@ class ConnHub {
 
   //#region PUBLIC API
 
-  public async connect(address: Address): Promise<false | object> {
+  public async connect(
+    address: Address,
+    data?: Partial<Data>,
+  ): Promise<false | object> {
     this._assertNotClosed();
     this._assertValidAddress(address);
 
@@ -167,7 +170,7 @@ class ConnHub {
 
     const state: Data['state'] = 'connecting';
     const key = inferPublicKey(address);
-    this._setPeer(address, {state, key});
+    this._setPeer(address, {...data, state, key});
     debug('connecting to %s', address);
     this._notifyEvent({type: state, address, key} as ListenEvent);
     this._updateLiveEntries();

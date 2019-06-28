@@ -4,6 +4,7 @@ export type ConnectionData = Readonly<{
   state: 'connecting' | 'connected' | 'disconnecting';
   disconnect?: (cb: (err?: any) => void) => void;
   key?: string;
+  [name: string]: any;
 }>;
 
 export type ListenEvent = Readonly<{

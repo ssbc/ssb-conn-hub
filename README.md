@@ -12,7 +12,7 @@ This module is only used to create an SSB CONN plugin, not used directly by appl
 
 ## API
 
-* `connHub.connect(address)`: connect to a peer known by its `address` (string, must conform to the [multiserver address convention](https://github.com/dominictarr/multiserver-address)). Returns a Promise, with the three possible outcomes:
+* `connHub.connect(address, data?)`: connect to a peer known by its `address` (string, must conform to the [multiserver address convention](https://github.com/dominictarr/multiserver-address)). The second argument `data` is optional, and allows you to attach additional metadata, that can be read later when this connection data is retrieved. Returns a Promise, with the three possible outcomes:
   - Resolves with an RPC object that represents the successfully connected peer
   - Resolves with `false` when the connect was unnecessary, therefore not performed
   - Rejects with an error indicating why the connection failed
