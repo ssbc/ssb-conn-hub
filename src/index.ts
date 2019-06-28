@@ -170,7 +170,11 @@ class ConnHub {
 
     const state: Data['state'] = 'connecting';
     const key = inferPublicKey(address);
-    this._setPeer(address, {...data, state, key});
+    if (data) {
+      this._setPeer(address, {...data, state, key});
+    } else {
+      this._setPeer(address, {state, key});
+    }
     debug('connecting to %s', address);
     this._notifyEvent({type: state, address, key} as ListenEvent);
     this._updateLiveEntries();
