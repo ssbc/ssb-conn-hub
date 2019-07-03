@@ -76,17 +76,20 @@ class ConnHub {
   }
 
   private _setPeer(address: Address, data: Partial<Data>) {
+    const now = Date.now();
+    const hubUpdated = now;
     const previousData = this._peers.get(address);
     if (previousData) {
       Object.keys(data).forEach(key => {
         const k = key as keyof Data;
         if (typeof data[k] === 'undefined') delete data[k];
       });
-      this._peers.set(address, {...previousData, ...data});
+      this._peers.set(address, {...previousData, hubUpdated, ...data});
     } else if (!data.state) {
       debug('unexpected control flow, we cannot add a peer without state');
     } else {
-      this._peers.set(address, data as Data);
+      const hubBirth = now;
+      this._peers.set(address, {hubBirth, hubUpdated, ...(data as Data)});
     }
   }
 

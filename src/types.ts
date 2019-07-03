@@ -2,6 +2,8 @@ export type Address = string;
 
 export type ConnectionData = Readonly<{
   state: 'connecting' | 'connected' | 'disconnecting';
+  hubBirth: number;
+  hubUpdated: number;
   disconnect?: (cb: (err?: any) => void) => void;
   key?: string;
   [name: string]: any;
