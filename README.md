@@ -1,6 +1,6 @@
 # ssb-conn-hub
 
-Module that manages active connections to peers. For use with the SSB CONN family of modules. See also [ssb-conn-db](https://github.com/staltz/ssb-conn-db).
+Module that manages active connections to peers. For use with the [SSB CONN](https://github.com/staltz/ssb-conn) family of modules.
 
 *Visual metaphor: a network switch managing connections to other peers, capable of starting or stopping connections.*
 
