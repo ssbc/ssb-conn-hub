@@ -101,11 +101,11 @@ class ConnHub {
   }
 
   private _onRpcConnect = (rpc: any, isClient: boolean) => {
-    // If we're not ready, close this connection immediately:
-    if (!this._server.ready() && rpc.id !== this._server.id) return rpc.close();
-
     // Don't process self connections, whatever that means:
     if (rpc.id === this._server.id) return;
+
+    // If ssb-db is (available and) not ready, close this connection ASAP:
+    if (this._server.ready && !this._server.ready()) return rpc.close();
 
     const peer = this._getPeerByKey(rpc.id);
 
