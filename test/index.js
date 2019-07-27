@@ -1,14 +1,16 @@
 const tape = require('tape');
 const ssbKeys = require('ssb-keys');
-const createSsbServer = require('ssb-server');
+const SecretStack = require('@staltz/secret-stack');
+const caps = require('ssb-caps');
 const pull = require('pull-stream');
 const ConnHub = require('../lib');
 
-const ssbServer = createSsbServer({
+const ssbServer = SecretStack({
+  appKey: caps.shs,
   temp: 'connhub',
   keys: ssbKeys.generate(),
   timeout: 1000,
-});
+})();
 
 const TEST_KEY = '@pAhDcHjunq6epPvYYo483vBjcuDkE10qrc2tYC827R0=.ed25519';
 const TEST_ADDR =

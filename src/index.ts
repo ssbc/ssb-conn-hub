@@ -100,6 +100,7 @@ class ConnHub {
     return undefined;
   }
 
+  // isClient means "we are the client"
   private _onRpcConnect = (rpc: any, isClient: boolean) => {
     // Don't process self connections, whatever that means:
     if (rpc.id === this._server.id) return;
@@ -109,7 +110,7 @@ class ConnHub {
 
     const peer = this._getPeerByKey(rpc.id);
 
-    if (!peer) {
+    if (!peer && isClient) {
       // If peer was not registered through the public API, try again a few times
       // in case there was a race condition with ConnHub::connect()
       rpc._connectRetries = rpc._connectRetries || 0;
@@ -118,13 +119,22 @@ class ConnHub {
           this._onRpcConnect(rpc, isClient);
         }, 200);
         rpc._connectRetries += 1;
-      } else {
-        debug('peer %s initiated an RPC connection with us', rpc.id);
+      } else if (isClient) {
+        debug(
+          'our secret-stack initiated an RPC connection with %s but not ' +
+            'through the ssb-conn-hub connect() API',
+          rpc.id,
+        );
       }
       return;
     }
 
-    const [address, data] = peer;
+    if (!peer) {
+      // Here, weAreClient is surely `false`
+      debug('peer %s initiated an RPC connection with us', rpc.id);
+    }
+
+    const [address, data] = !peer ? [rpc.stream.address, {key: rpc.id}] : peer;
     const key = data.key;
 
     const state = 'connected';

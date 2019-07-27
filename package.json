@@ -19,10 +19,11 @@
     "ssb-ref": "~2.13.9"
   },
   "devDependencies": {
+    "@staltz/secret-stack": "6.2.1-1",
     "@types/node": "^11.10.4",
     "pull-stream": "^3.6.9",
-    "ssb-server": "~13.6.3",
-    "ssb-keys": "~7.1.5",
+    "ssb-caps": "~1.1.0",
+    "ssb-keys": "~7.2.0",
     "tape": "^4.9.2",
     "typescript": "3.3.x"
   },
