@@ -8,6 +8,11 @@ Module that manages active connections to peers. For use with the [SSB CONN](htt
 
 ## Usage
 
+**Prerequisites:**
+
+- Requires **Node.js 6.5** or higher
+- Requires `secret-stack@^6.3.0`
+
 This module is only used to create an SSB CONN plugin, not used directly by applications. A ConnHub instance should be available on the CONN plugin, with the following API:
 
 ## API
