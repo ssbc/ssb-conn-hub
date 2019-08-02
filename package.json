@@ -10,6 +10,8 @@
     "url": "git://github.com/staltz/ssb-conn-hub.git"
   },
   "dependencies": {
+    "ip": "^1.1.5",
+    "multiserver": "^3.4.0",
     "multiserver-address": "~1.0.1",
     "promisify-tuple": "^1.0.0",
     "debug": "^4.1.1",

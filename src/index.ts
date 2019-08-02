@@ -4,6 +4,8 @@ import {EventEmitter} from 'events';
 const pull = require('pull-stream');
 const cat = require('pull-cat');
 const Notify = require('pull-notify');
+const ip = require('ip');
+const msNetPlugin = require('multiserver/plugins/net')({});
 const msAddress = require('multiserver-address');
 const ref = require('ssb-ref');
 const debug = require('debug')('ssb:conn-hub');
@@ -26,6 +28,19 @@ function inferPublicKey(address: Address): string | undefined {
   } else {
     return ref.getKeyFromAddress(address);
   }
+}
+
+// TODO perhaps the `type` should be provided by each multiserver plugin?
+// like when multiserver plugins provide the `stream.address` to secret-stack
+function inferPeerType(address: Address): Data['inferredType'] {
+  if (address.startsWith('bt:')) return 'bt';
+  if (address.startsWith('dht:')) return 'dht';
+  if (address.startsWith('tunnel:')) return 'tunnel';
+  if (address.startsWith('net:')) {
+    const parsed = msNetPlugin.parse(address);
+    if (parsed && parsed.host && ip.isPrivate(parsed.host)) return 'lan';
+  }
+  return;
 }
 
 class ConnHub {
@@ -134,12 +149,15 @@ class ConnHub {
       debug('peer %s initiated an RPC connection with us', rpc.id);
     }
 
-    const [address, data] = !peer ? [rpc.stream.address, {key: rpc.id}] : peer;
+    const [address, data] = !peer
+      ? [rpc.stream.address, {key: rpc.id} as Data]
+      : peer;
+    data.inferredType = inferPeerType(address);
     const key = data.key;
 
     const state = 'connected';
     const disconnect: Data['disconnect'] = cb => rpc.close(true, cb);
-    this._setPeer(address, {state, key, disconnect});
+    this._setPeer(address, {...data, state, disconnect});
     debug('connected to %s', address);
     this._notifyEvent({
       type: state,

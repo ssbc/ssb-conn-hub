@@ -1,15 +1,16 @@
 export type Address = string;
 
-export type ConnectionData = Readonly<{
+export type ConnectionData = {
+  key?: string;
   state: 'connecting' | 'connected' | 'disconnecting';
+  inferredType?: 'bt' | 'lan' | 'dht' | 'tunnel';
   hubBirth: number;
   hubUpdated: number;
   disconnect?: (cb: (err?: any) => void) => void;
-  key?: string;
   [name: string]: any;
-}>;
+};
 
-export type ListenEvent = Readonly<{
+export type ListenEvent = {
   type:
     | ConnectionData['state']
     | 'connecting-failed'
@@ -18,4 +19,4 @@ export type ListenEvent = Readonly<{
   address: Address;
   key?: string;
   details?: any;
-}>;
+};
