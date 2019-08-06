@@ -1,6 +1,6 @@
 const tape = require('tape');
 const ssbKeys = require('ssb-keys');
-const SecretStack = require('@staltz/secret-stack');
+const SecretStack = require('secret-stack');
 const caps = require('ssb-caps');
 const pull = require('pull-stream');
 const ConnHub = require('../lib');

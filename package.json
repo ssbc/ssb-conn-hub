@@ -21,9 +21,9 @@
     "ssb-ref": "~2.13.9"
   },
   "devDependencies": {
-    "@staltz/secret-stack": "6.2.1-1",
     "@types/node": "^11.10.4",
     "pull-stream": "^3.6.9",
+    "secret-stack": "6.3.0",
     "ssb-caps": "~1.1.0",
     "ssb-keys": "~7.2.0",
     "tape": "^4.9.2",
