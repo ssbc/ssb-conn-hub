@@ -295,6 +295,7 @@ class ConnHub {
 
     if (this._peers.has(address)) {
       this._setPeer(address, data);
+      this._updateLiveEntries();
       return true;
     } else {
       return false;
