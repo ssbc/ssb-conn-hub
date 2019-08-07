@@ -64,6 +64,54 @@ tape('listen() emits connecting then connecting-failed', t => {
   );
 });
 
+tape('update() returns true when the peer is in ConnHub', t => {
+  const connHub = new ConnHub(ssbServer);
+
+  let i = 0;
+  pull(
+    connHub.listen(),
+    pull.drain(ev => {
+      ++i;
+      if (i === 1) {
+        t.equals(ev.type, 'connecting', '1st event is connecting');
+
+        const a1 = [...connHub.entries()];
+        t.equals(a1.length, 1, 'There is one entry');
+        t.equals(a1[0].length, 2, 'The entry is a tuple');
+        t.equals(typeof a1[0][1].foo, 'undefined', 'Field "foo" is undefined');
+
+        const result = connHub.update(TEST_ADDR, {foo: 'bar'});
+        t.strictEqual(result, true, 'Returns true');
+
+        const a2 = [...connHub.entries()];
+        t.equals(a2.length, 1, 'There is one entry');
+        t.equals(a2[0].length, 2, 'The entry is a tuple');
+        t.equals(a2[0][1].foo, 'bar', 'Field "foo" equals "bar"');
+      } else if (i === 2) {
+        t.equals(ev.type, 'connecting-failed', '2nd is connecting-failed');
+        t.end();
+      } else {
+        t.fail('listen() should not emit further events');
+      }
+    }),
+  );
+
+  connHub.connect(TEST_ADDR).then(
+    () => {
+      t.fail('The connection should not succeed');
+    },
+    _err => {},
+  );
+});
+
+tape('update() returns false when the peer is not in ConnHub', t => {
+  const connHub = new ConnHub(ssbServer);
+
+  const result = connHub.update(TEST_ADDR, {foo: 'bar'});
+  t.strictEqual(result, false, 'Returns false');
+  t.end();
+});
+
 tape('liveEntries() emits all entries as they update', t => {
   const connHub = new ConnHub(ssbServer);
 

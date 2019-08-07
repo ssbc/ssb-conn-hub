@@ -289,6 +289,18 @@ class ConnHub {
     return true;
   }
 
+  public update(address: Address, data: Partial<Data>): boolean {
+    this._assertNotClosed();
+    this._assertValidAddress(address);
+
+    if (this._peers.has(address)) {
+      this._setPeer(address, data);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   public reset() {
     this._assertNotClosed();
 

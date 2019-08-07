@@ -25,6 +25,7 @@ This module is only used to create an SSB CONN plugin, not used directly by appl
   - Resolves with `true` when disconnected successfully
   - Resolves with `false` when the disconnect was unnecessary, therefore not performed
   - Rejects with an error indicating why the disconnection failed
+* `connHub.update(address, data)`: update the metadata of a peer currently in connection with us, where the peer is known by its `address` and the new data is in `data`. If the peer is not registered in ConnHub, this method performs no operations and returns false. Returns true if the update has succeeded.
 * `connHub.reset()`: closes all connections, basically resetting this instance as if it had just been started
 * `connHub.entries()`: returns a new `Iterator` object that gives `[address, data]` pairs, where data has the state and key of the peer
 * `connHub.liveEntries()`: returns a pull-stream that emits an array of entries (like `connHub.entries()`, but an array instead of an `Iterator`) everytime there are updates to connections.
