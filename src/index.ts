@@ -37,7 +37,8 @@ function inferPeerType(address: Address): Data['inferredType'] {
   if (address.startsWith('dht:')) return 'dht';
   if (address.startsWith('tunnel:')) return 'tunnel';
   if (address.startsWith('net:')) {
-    const parsed = msNetPlugin.parse(address);
+    const netAddr = address.split('~')[0];
+    const parsed = msNetPlugin.parse(netAddr);
     if (parsed && parsed.host) {
       if (ip.isPrivate(parsed.host)) return 'lan';
       else return 'internet';
