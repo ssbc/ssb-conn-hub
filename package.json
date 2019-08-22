@@ -10,14 +10,14 @@
     "url": "git://github.com/staltz/ssb-conn-hub.git"
   },
   "dependencies": {
+    "debug": "^4.1.1",
     "ip": "^1.1.5",
     "multiserver": "^3.4.0",
     "multiserver-address": "~1.0.1",
     "promisify-tuple": "^1.0.0",
-    "debug": "^4.1.1",
     "pull-cat": "~1.1.11",
-    "pull-stream": "~3.6.9",
     "pull-notify": "~0.1.1",
+    "pull-stream": "~3.6.9",
     "ssb-ref": "~2.13.9"
   },
   "devDependencies": {
