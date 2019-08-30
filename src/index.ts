@@ -156,7 +156,9 @@ class ConnHub {
     const [address, data] = !peer
       ? [rpc.stream.address, {key: rpc.id} as Data]
       : peer;
-    data.inferredType = inferPeerType(address);
+    if (!data.type) {
+      data.inferredType = inferPeerType(address);
+    }
     const key = data.key;
 
     const state = 'connected';
