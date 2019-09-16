@@ -30,6 +30,8 @@ function inferPublicKey(address: Address): string | undefined {
   }
 }
 
+function noop() {}
+
 // TODO perhaps the `type` should be provided by each multiserver plugin?
 // like when multiserver plugins provide the `stream.address` to secret-stack
 function inferPeerType(address: Address): Data['inferredType'] {
@@ -125,7 +127,10 @@ class ConnHub {
     if (rpc.id === this._server.id) return;
 
     // If ssb-db is (available and) not ready, close this connection ASAP:
-    if (this._server.ready && !this._server.ready()) return rpc.close();
+    if (this._server.ready && !this._server.ready()) {
+      rpc.close(true, noop);
+      return;
+    }
 
     const peer = this._getPeerByKey(rpc.id);
 
@@ -162,7 +167,7 @@ class ConnHub {
     const key = data.key;
 
     const state = 'connected';
-    const disconnect: Data['disconnect'] = cb => rpc.close(true, cb);
+    const disconnect: Data['disconnect'] = cb => rpc.close(true, cb || noop);
     this._setPeer(address, {...data, state, disconnect});
     debug('connected to %s', address);
     this._notifyEvent({
@@ -265,7 +270,7 @@ class ConnHub {
     }
 
     if (peer.disconnect) {
-      const [err] = await run<never>(peer.disconnect)();
+      const [err] = await run(peer.disconnect)();
       if (err) {
         debug('failed to disconnect from %s', address);
         this._notifyEvent({
@@ -314,7 +319,7 @@ class ConnHub {
     for (var id in this._server.peers) {
       if (id !== this._server.id) {
         for (let peer of this._server.peers[id]) {
-          peer.close(true);
+          peer.close(true, noop);
         }
       }
     }
