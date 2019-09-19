@@ -34,9 +34,9 @@ function noop() {}
 
 // TODO perhaps the `type` should be provided by each multiserver plugin?
 // like when multiserver plugins provide the `stream.address` to secret-stack
-function inferPeerType(address: Address): Data['inferredType'] {
+function inferPeerType(address: Address, meta: any): Data['inferredType'] {
   if (address.startsWith('bt:')) return 'bt';
-  if (address.startsWith('dht:')) return 'dht';
+  if (address.startsWith('dht:') || meta === 'dht') return 'dht';
   if (address.startsWith('tunnel:')) return 'tunnel';
   if (address.startsWith('net:')) {
     const netAddr = address.split('~')[0];
@@ -162,7 +162,7 @@ class ConnHub {
       ? [rpc.stream.address, {key: rpc.id} as Data]
       : peer;
     if (!data.type) {
-      data.inferredType = inferPeerType(address);
+      data.inferredType = inferPeerType(address, rpc.stream.meta);
     }
     const key = data.key;
 
