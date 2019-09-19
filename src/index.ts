@@ -4,31 +4,11 @@ import {EventEmitter} from 'events';
 const pull = require('pull-stream');
 const cat = require('pull-cat');
 const Notify = require('pull-notify');
-const ip = require('ip');
+const IP = require('ip');
 const msNetPlugin = require('multiserver/plugins/net')({});
 const msAddress = require('multiserver-address');
-const ref = require('ssb-ref');
+const Ref = require('ssb-ref');
 const debug = require('debug')('ssb:conn-hub');
-
-function isDhtAddress(addr: Address) {
-  return addr.substr(0, 4) === 'dht:';
-}
-
-function getKeyFromDhtAddress(addr: Address): string {
-  const [transport /*, transform */] = addr.split('~');
-  const [dhtTag, , remoteId] = transport.split(':');
-  if (dhtTag !== 'dht') throw new Error('Invalid DHT address ' + addr);
-  const key = remoteId[0] === '@' ? remoteId : '@' + remoteId;
-  return key;
-}
-
-function inferPublicKey(address: Address): string | undefined {
-  if (isDhtAddress(address)) {
-    return getKeyFromDhtAddress(address);
-  } else {
-    return ref.getKeyFromAddress(address);
-  }
-}
 
 function noop() {}
 
@@ -42,7 +22,7 @@ function inferPeerType(address: Address, meta: any): Data['inferredType'] {
     const netAddr = address.split('~')[0];
     const parsed = msNetPlugin.parse(netAddr);
     if (parsed && parsed.host) {
-      if (ip.isPrivate(parsed.host)) return 'lan';
+      if (IP.isPrivate(parsed.host)) return 'lan';
       else return 'internet';
     }
   }
@@ -211,7 +191,7 @@ class ConnHub {
     }
 
     const state: Data['state'] = 'connecting';
-    const key = inferPublicKey(address);
+    const key = Ref.getKeyFromAddress(address);
     if (data) {
       this._setPeer(address, {...data, state, key});
     } else {
@@ -259,7 +239,7 @@ class ConnHub {
 
     const peer = this._peers.get(address)!;
 
-    const key = inferPublicKey(address);
+    const key = Ref.getKeyFromAddress(address);
     const prevState = peer.state;
     if (prevState !== 'disconnecting') {
       const state: Data['state'] = 'disconnecting';
