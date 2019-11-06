@@ -21,7 +21,7 @@ function inferPeerType(address: Address, meta: any): Data['inferredType'] {
   if (address.startsWith('net:')) {
     const netAddr = address.split('~')[0];
     const parsed = msNetPlugin.parse(netAddr);
-    if (parsed && parsed.host) {
+    if (parsed?.host) {
       if (IP.isPrivate(parsed.host)) return 'lan';
       else return 'internet';
     }
@@ -117,7 +117,7 @@ class ConnHub {
     if (!peer && isClient) {
       // If peer was not registered through the public API, try again a few times
       // in case there was a race condition with ConnHub::connect()
-      rpc._connectRetries = rpc._connectRetries || 0;
+      rpc._connectRetries = rpc._connectRetries ?? 0;
       if (isClient && rpc._connectRetries < 4) {
         setTimeout(() => {
           this._onRpcConnect(rpc, isClient);
@@ -147,7 +147,7 @@ class ConnHub {
     const key = data.key;
 
     const state = 'connected';
-    const disconnect: Data['disconnect'] = cb => rpc.close(true, cb || noop);
+    const disconnect: Data['disconnect'] = cb => rpc.close(true, cb ?? noop);
     this._setPeer(address, {...data, state, disconnect});
     debug('connected to %s', address);
     this._notifyEvent({
