@@ -33,9 +33,32 @@ This module is only used to create an SSB CONN plugin, not used directly by appl
   - `type` is either `'connecting'`, `'connecting-failed'`, `'connected'`, `'disconnecting'`, `'disconnecting-failed'`, `'disconnected'`
   - `address` is the original address used for connecting
   - (maybe present) `key` is the cryptographic public id
-  - (maybe present) `details` is an object with additional info (such as errors)
+  - (maybe present, see below) `details` is an object with additional info
+    - **Present when** when `type === 'connected'` and contains `details.rpc` (the MuxRPC object for the remote peer) and `details.isClient` (boolean indicating whether **we** are the client)
+    - Does not exist when `type === 'disconnecting'`
+    - Does not exist when `type === 'disconnected'`
+    - Does not exist when `type === 'connecting'`
+    - **Present when** `type === 'connecting-failed'` and `details` is the error object for the connection failure
+    - **Present when** `type === 'disconnecting-failed'` and `details` is the error object for the connection failure
 * `connHub.getState(address)`: returns undefined if the peer for that address is disconnected, otherwise returns one of `'connecting'`, `'connected'`, or `'disconnecting'`
 * `connHub.close()`: terminates any used resources and listeners, in preparation to destroy this instance.
+
+## Recipes
+
+**How can I get the RPC object for the remote peer connected with me?**
+
+Assuming you're access ConnHub from ssb-conn, listen to connection events on ConnHub, `filter` for `'connected'` events, and they should contain the RPC object on the event's `details` field:
+
+```js
+pull(
+  ssb.conn.hub().listen(),
+  pull.filter(event => event.type === 'connected'),
+  pull.drain(event => {
+    const rpc = event.details.rpc
+    // `rpc` object has public methods such as `rpc.createHistoryStream()`
+  })
+)
+```
 
 ## License
 
