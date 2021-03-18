@@ -81,7 +81,7 @@ class ConnHub {
     const hubUpdated = now;
     const previousData = this._peers.get(address);
     if (previousData) {
-      Object.keys(data).forEach(key => {
+      Object.keys(data).forEach((key) => {
         const k = key as keyof Data;
         if (typeof data[k] === 'undefined') delete data[k];
       });
@@ -90,7 +90,7 @@ class ConnHub {
       debug('unexpected control flow, we cannot add a peer without state');
     } else {
       const hubBirth = now;
-      this._peers.set(address, {hubBirth, hubUpdated, ...(data as Data)});
+      this._peers.set(address, {...(data as Data), hubBirth, hubUpdated});
     }
   }
 
@@ -147,7 +147,7 @@ class ConnHub {
     const key = data.key;
 
     const state = 'connected';
-    const disconnect: Data['disconnect'] = cb => rpc.close(true, cb ?? noop);
+    const disconnect: Data['disconnect'] = (cb) => rpc.close(true, cb ?? noop);
     this._setPeer(address, {...data, state, disconnect});
     debug('connected to %s', address);
     this._notifyEvent({
