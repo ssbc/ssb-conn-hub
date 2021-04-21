@@ -233,7 +233,7 @@ class ConnHub {
     const [err, rpc] = await run<any>(this._server.connect)(address);
     if (err) {
       this._peers.delete(address);
-      debug('failed to connect to %s', address);
+      debug('failed to connect to %s because: %s', address, err.message);
       this._notifyEvent({
         type: 'connecting-failed',
         address,
@@ -282,7 +282,7 @@ class ConnHub {
     if (peer.disconnect) {
       const [err] = await run(peer.disconnect)();
       if (err) {
-        debug('failed to disconnect from %s', address);
+        debug('failed to disconnect from %s because: %s', address, err.message);
         this._notifyEvent({
           type: 'disconnecting-failed',
           address,
