@@ -29,10 +29,23 @@ function inferPeerType(address: Address, meta: any): Data['inferredType'] {
   return;
 }
 
+interface SSB extends EventEmitter {
+  id: string;
+  ready?: () => boolean;
+  connect: (addr: string, cb: CallableFunction) => void;
+  close: (err: any, cb: CallableFunction) => void;
+  stream: {address: string; meta: any};
+  peers: Record<string, Array<RPC>>;
+}
+
+interface RPC extends SSB {
+  _connectRetries?: number;
+}
+
 class ConnHub {
-  private readonly _server: any;
+  private readonly _ssb: SSB;
   private readonly _peers: Map<Address, Data>;
-  private readonly _rpcs: Map<Address, any>;
+  private readonly _rpcs: Map<Address, RPC>;
   private readonly _notifyEvent: any;
   private readonly _notifyEntries: any;
   private _closed: boolean;
@@ -42,12 +55,12 @@ class ConnHub {
    */
   private readonly _connectRetries: Set<Address>;
 
-  constructor(server: any) {
-    this._server = server;
+  constructor(ssb: SSB) {
+    this._ssb = ssb;
     this._closed = false;
-    this._connectRetries = new Set<Address>();
-    this._peers = new Map<Address, Data>();
-    this._rpcs = new Map<Address, any>();
+    this._connectRetries = new Set();
+    this._peers = new Map();
+    this._rpcs = new Map();
     this._notifyEvent = Notify();
     this._notifyEntries = Notify();
     this._init();
@@ -56,10 +69,7 @@ class ConnHub {
   //#region PRIVATE
 
   private _init() {
-    (this._server as EventEmitter).addListener(
-      'rpc:connect',
-      this._onRpcConnect,
-    );
+    this._ssb.addListener('rpc:connect', this._onRpcConnect);
   }
 
   private _assertNotClosed() {
@@ -104,12 +114,12 @@ class ConnHub {
   }
 
   // isClient means "we are the client"
-  private _onRpcConnect = (rpc: any, isClient: boolean) => {
+  private _onRpcConnect = (rpc: RPC, isClient: boolean) => {
     // Don't process self connections, whatever that means:
-    if (rpc.id === this._server.id) return;
+    if (rpc.id === this._ssb.id) return;
 
     // If ssb-db is (available and) not ready, close this connection ASAP:
-    if (this._server.ready && !this._server.ready()) {
+    if (this._ssb.ready && !this._ssb.ready()) {
       rpc.close(true, noop);
       return;
     }
@@ -119,7 +129,7 @@ class ConnHub {
     if (!peer && isClient) {
       // If peer was not registered through the public API, try again a few times
       // in case there was a race condition with ConnHub::connect()
-      rpc._connectRetries = rpc._connectRetries ?? 0;
+      rpc._connectRetries ??= 0;
       if (isClient && rpc._connectRetries < 4) {
         setTimeout(() => {
           this._onRpcConnect(rpc, isClient);
@@ -177,14 +187,14 @@ class ConnHub {
   public async connect(
     address: Address,
     data?: Partial<Data>,
-  ): Promise<false | object> {
+  ): Promise<false | RPC> {
     this._assertNotClosed();
     this._assertValidAddress(address);
 
     if (this._peers.has(address)) {
       const peer = this._peers.get(address)!;
       if (peer.state === 'connected') {
-        if (this._rpcs.has(address)) return this._rpcs.get(address);
+        if (this._rpcs.has(address)) return this._rpcs.get(address)!;
         else return false;
       } else if (peer.state === 'connecting') {
         return new Promise((resolve, reject) => {
@@ -230,7 +240,7 @@ class ConnHub {
     this._notifyEvent({type: state, address, key} as ListenEvent);
     this._updateLiveEntries();
 
-    const [err, rpc] = await run<any>(this._server.connect)(address);
+    const [err, rpc] = await run<RPC>(this._ssb.connect)(address);
     if (err) {
       this._peers.delete(address);
       debug('failed to connect to %s because: %s', address, err.message);
@@ -326,9 +336,9 @@ class ConnHub {
   public reset() {
     this._assertNotClosed();
 
-    for (var id in this._server.peers) {
-      if (id !== this._server.id) {
-        for (let peer of this._server.peers[id]) {
+    for (var id in this._ssb.peers) {
+      if (id !== this._ssb.id) {
+        for (let peer of this._ssb.peers[id]) {
           peer.close(true, noop);
         }
       }
@@ -367,10 +377,7 @@ class ConnHub {
   }
 
   public close() {
-    (this._server as EventEmitter).removeListener(
-      'rpc:connect',
-      this._onRpcConnect,
-    );
+    this._ssb.removeListener('rpc:connect', this._onRpcConnect);
     this._closed = true;
     this._peers.clear();
     this._rpcs.clear();
