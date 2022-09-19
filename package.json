@@ -1,7 +1,7 @@
 {
   "name": "ssb-conn-hub",
   "description": "Module that manages active connections to SSB peers",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "homepage": "https://github.com/staltz/ssb-conn-hub",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
