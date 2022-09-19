@@ -334,7 +334,7 @@ class ConnHub {
   }
 
   public reset() {
-    this._assertNotClosed();
+    if (this._closed) return;
 
     for (var id in this._ssb.peers) {
       if (id !== this._ssb.id) {
@@ -377,6 +377,7 @@ class ConnHub {
   }
 
   public close() {
+    this.reset();
     this._ssb.removeListener('rpc:connect', this._onRpcConnect);
     this._closed = true;
     this._peers.clear();
